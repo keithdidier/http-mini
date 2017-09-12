@@ -14,7 +14,8 @@ class App extends Component {
 
     this.state = {
       vehiclesToDisplay: [],
-      buyersToDisplay: []
+      buyersToDisplay: [],
+      baseUrl: 'https://joes-autos.herokuapp.com'
     }
 
     this.getVehicles = this.getVehicles.bind(this);
@@ -24,6 +25,7 @@ class App extends Component {
     this.filterByColor = this.filterByColor.bind(this);
     this.filterByMake = this.filterByMake.bind(this);
     this.addBuyer = this.addBuyer.bind(this);
+    this.deleteBuyer = this.deleteBuyer.bind(this);
     this.nameSearch = this.nameSearch.bind(this);
     this.resetData = this.resetData.bind(this);
     this.byYear = this.byYear.bind(this);
@@ -31,16 +33,36 @@ class App extends Component {
 
   getVehicles() {
     // axios (GET)
+    axios.get( this.state.baseUrl + '/api/vehicles')
+          .then( (response) => {
+            this.setState({
+              vehiclesToDisplay: response.data
+            })
+          })
     // setState with response -> vehiclesToDisplay
   }
 
   getPotentialBuyers() {
     // axios (GET)
+    axios.get(this.state.baseUrl + '/api/buyers/')
+          .then((response) => {
+            console.log(response.data)
+            this.setState({
+              buyersToDisplay: response.data
+            })
+          })
+          
     // setState with response -> buyersToDisplay
   }
 
   sellCar(id) {
     // axios (DELETE)
+    axios.delete(this.state.baseUrl + '/api/vehicles/' + id)
+        .then((response) => {
+           this.setState({
+             vehiclesToDisplay: response.data.vehicles
+           }) 
+        })
     // setState with response -> vehiclesToDisplay
   }
 
@@ -56,8 +78,14 @@ class App extends Component {
     // setState with response -> vehiclesToDisplay
   }
 
-  updatePrice(priceChange) {
+  updatePrice(id, priceChange) {
     // axios (PUT)
+    axios.put(this.state.baseUrl + '/api/vehicles/' + id + '/' + priceChange)
+          .then((response) => {
+              this.setState({
+                vehiclesToDisplay: response.data.vehicles
+              })
+          })
     // setState with response -> vehiclesToDisplay
   }
 
@@ -70,6 +98,13 @@ class App extends Component {
     price: this.refs.price.value
   }  
   // axios (POST)
+  axios.post( this.state.baseUrl + '/api/vehicles', newCar)
+       .then( (response) => {
+         console.log("POST RESPONSE: ", response.data)
+         this.setState({
+           vehiclesToDisplay: response.data.vehicles
+         }) 
+       }) 
   // setState with response -> vehiclesToDisplay
 }
 
@@ -80,13 +115,38 @@ addBuyer() {
     address: this.refs.address.value
   }
   //axios (POST)
+  axios.post(this.state.baseUrl + '/api/buyers', newBuyer )
+       .then((response) => {
+         console.log(response)
+         this.setState({
+           buyersToDisplay: response.data.buyers
+         })
+       }) 
   // setState with response -> buyersToDisplay
+}
+
+deleteBuyer(id) {
+  //axios (DELETE)
+  axios.delete(this.state.baseUrl + '/api/buyers/' + id)
+       .then((response) => {
+         console.log(response)
+         this.setState({
+           buyersToDisplay: response.data.buyers
+         })
+       }) 
 }
 
 nameSearch() {
   // axios (GET)
-  // setState with response -> buyersToDisplay
   let searchLetters = this.refs.searchLetters.value;
+  axios.get(this.state.baseUrl + '/api/buyers?name=' + searchLetters)
+       .then((response) => {
+         this.setState({
+           buyersToDisplay: response.data
+         })
+       })   
+  // setState with response -> buyersToDisplay
+  
 }
 
 byYear() {
@@ -126,11 +186,11 @@ resetData(dataToReset) {
           <p>Price: { v.price }</p>
           <button
             className='btn btn-sp'
-            onClick={ () => this.updatePrice('up') }
+            onClick={ () => this.updatePrice(v.id, 'up') }
             >Increase Price</button>
           <button
             className='btn btn-sp'
-            onClick={ () => this.updatePrice('down') }
+            onClick={ () => this.updatePrice(v.id, 'down') }
             >Decrease Price</button>  
           <button 
             className='btn btn-sp'
@@ -147,7 +207,9 @@ resetData(dataToReset) {
           <p>Name: {person.name}</p>
           <p>Phone: {person.phone}</p>
           <p>Address: {person.address}</p>
-          <button className='btn'>No longer interested</button>
+          <button className='btn' 
+            onClick={ () => {this.deleteBuyer(person.id)}}>No longer interested
+          </button>
           <hr className='hr' />
         </div> 
       )
